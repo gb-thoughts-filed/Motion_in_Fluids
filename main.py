@@ -20,7 +20,8 @@ def velocities_generator(times: list, posns: list):
     velocities = []
 
     for i in np.arange(len(times) - 1):
-        velocity = (posns[i + 1] - posns[i]) / (1000 * (np.abs(times[i + 1] - times[i])))
+        velocity = (posns[i + 1] - posns[i]) / (
+                1000 * (np.abs(times[i + 1] - times[i])))
         velocities.append(velocity)
 
     velocities.insert(0, 0)
@@ -59,6 +60,26 @@ def velocities_from_data_sets(data_folder_path, t_range_dict):
     return data_dict
 
 
+def get_ball_width(file_path):
+    width_dict = {}
+    ball_num, m1, m2, m3 = np.loadtxt(file_path, delimiter=',', unpack=True,
+                                      skiprows=2)
+    mean_width = np.mean((m1, m2, m3), axis=0)
+    mean_width_err = np.std((m1, m2, m3), axis=0) / np.sqrt(3)
+    for i in range(len(ball_num)):
+        width_dict["B{}".format(ball_num[i])] = (
+            mean_width[i], mean_width_err[i])
+    return width_dict
+
+
+def v_correct(v_dict, w_dict, dim):
+    v_corr_dict = {}
+    for ii in v_dict:
+        v_corr_dict[ii] = v_dict[ii] / (
+                    1 - 2.104 * w_dict[ii] / dim + 2.089 * (w_dict / dim) ** 2)
+    return v_corr_dict
+
+
 if __name__ == "__main__":
     dimension_of_container = 9.5 / 100
 
@@ -66,7 +87,10 @@ if __name__ == "__main__":
                        'B4': (0.75, 1.75), 'B5': (1.2, 1.8)}
     glycerin_time_dict = {'B1': (20, 80), 'B2': (10, 30), 'B3': (5, 15),
                           'B4': (2, 6), 'B5': (1, 4)}
+    water_width_dict = get_ball_width(
+        "Ball Widths.xlsx - Ball Widths Glycerin.csv")
     print(velocities_from_data_sets("Water_data", water_time_dict))
+    print(water_width_dict)
     # glycerin ball 1
     g_b1_times, g_b1_positions = time_positions_extractor(
         "Glycerin_data/GabrielleJunyuGlycerinNov142023_B1.txt")
