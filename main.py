@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
@@ -15,11 +17,10 @@ def posn_extractor(file: str):
 
 
 def velocities_generator(times: list, posns: list):
-
     velocities = []
 
     for i in np.arange(len(times) - 1):
-        velocity = (posns[i+1] - posns[i])/np.abs(times[i+1] - times[i])
+        velocity = (posns[i + 1] - posns[i]) / (1000 * (np.abs(times[i + 1] - times[i])))
         velocities.append(velocity)
 
     velocities.insert(0, 0)
@@ -27,58 +28,96 @@ def velocities_generator(times: list, posns: list):
 
 
 def quick_plot(x: list, y: list, title: str):
+    plt.figure(title)
     plt.plot(x, y, marker="o", ls='')
     plt.title(title)
-    plt.show()
+
+
+def get_index_geq(lst, value):
+    for i in range(len(lst)):
+        if lst[i] >= value:
+            return i
+
+
+def process_velocity(file_path, t_range):
+    times, positions = time_positions_extractor(file_path)
+    i_start = get_index_geq(times, t_range[0])
+    i_end = get_index_geq(times, t_range[1])
+    velocities = velocities_generator(times,
+                                      positions)
+    velocities = velocities[i_start: i_end]
+    return np.mean(velocities), np.std(velocities) / np.sqrt(len(velocities))
+
+
+def velocities_from_data_sets(data_folder_path, t_range_dict):
+    data_dict = {}
+    for path in os.listdir(data_folder_path):
+        key = path[-6:-4]
+        print(key)
+        data_dict[key] = (process_velocity(
+            os.path.join(data_folder_path, path), t_range_dict[key]))
+    return data_dict
 
 
 if __name__ == "__main__":
+    dimension_of_container = 9.5 / 100
 
+    water_time_dict = {'B1': (1, 3), 'B2': (1, 2), 'B3': (1, 2),
+                       'B4': (0.75, 1.75), 'B5': (1.2, 1.8)}
+    glycerin_time_dict = {'B1': (20, 80), 'B2': (10, 30), 'B3': (5, 15),
+                          'B4': (2, 6), 'B5': (1, 4)}
+    print(velocities_from_data_sets("Water_data", water_time_dict))
     # glycerin ball 1
     g_b1_times, g_b1_positions = time_positions_extractor(
-        "GabrielleJunyuGlycerinNov142023_B1.txt")
+        "Glycerin_data/GabrielleJunyuGlycerinNov142023_B1.txt")
     g_b1_velocities = velocities_generator(g_b1_times, g_b1_positions)
 
     # print(g_b1_velocities)
     quick_plot(g_b1_times[20:], g_b1_velocities[20:], "g ball 1")
 
     # glycerin ball 2
-    g_b2_times, g_b2_positions = time_positions_extractor("GabrielleJunyuGlycerinNov142023_B2.txt")
+    g_b2_times, g_b2_positions = time_positions_extractor(
+        "Glycerin_data/GabrielleJunyuGlycerinNov142023_B2.txt")
     g_b2_velocities = velocities_generator(g_b2_times, g_b2_positions)
 
     quick_plot(g_b2_times, g_b2_velocities, "g ball 2")
     # print(g_b2_velocities)
 
     # glycerin ball 3
-    g_b3_times, g_b3_positions = time_positions_extractor("GabrielleJunyuGlycerinNov142023_B3.txt")
+    g_b3_times, g_b3_positions = time_positions_extractor(
+        "Glycerin_data/GabrielleJunyuGlycerinNov142023_B3.txt")
     g_b3_velocities = velocities_generator(g_b3_times, g_b3_positions)
 
     quick_plot(g_b3_times, g_b3_velocities, "g ball 3")
     # print(g_b3_velocities)
 
     # glycerin ball 4
-    g_b4_times, g_b4_positions = time_positions_extractor("GabrielleJunyuGlycerinNov142023_B4.txt")
+    g_b4_times, g_b4_positions = time_positions_extractor(
+        "Glycerin_data/GabrielleJunyuGlycerinNov142023_B4.txt")
     g_b4_velocities = velocities_generator(g_b4_times, g_b4_positions)
 
     quick_plot(g_b4_times, g_b4_velocities, "g ball 4")
     # print(g_b2_velocities)
 
     # glycerin ball 5
-    g_b5_times, g_b5_positions = time_positions_extractor("GabrielleJunyuGlycerinNov142023_B5.txt")
+    g_b5_times, g_b5_positions = time_positions_extractor(
+        "Glycerin_data/GabrielleJunyuGlycerinNov142023_B5.txt")
     g_b5_velocities = velocities_generator(g_b5_times, g_b5_positions)
 
     quick_plot(g_b5_times, g_b5_velocities, "g ball 5")
     # print(g_b5_velocities)
 
     # water ball 1
-    w_b1_times, w_b1_positions = time_positions_extractor("GabrielleJunyuWaterNov22023_B1.txt")
+    w_b1_times, w_b1_positions = time_positions_extractor(
+        "Water_data/GabrielleJunyuWaterNov22023_B1.txt")
     w_b1_velocities = velocities_generator(w_b1_times, w_b1_positions)
 
     quick_plot(w_b1_times[1:], w_b1_velocities[1:], "w ball 1")
     # print(w_b1_velocities)
 
     # water ball 2
-    w_b2_times, w_b2_positions = time_positions_extractor("GabrielleJunyuWaterNov22023_B2.txt")
+    w_b2_times, w_b2_positions = time_positions_extractor(
+        "Water_data/GabrielleJunyuWaterNov22023_B2.txt")
 
     w_b2_velocities = velocities_generator(w_b2_times, w_b2_positions)
 
@@ -86,20 +125,24 @@ if __name__ == "__main__":
     # print(w_b2_velocities)
 
     # water ball 3
-    w_b3_times, w_b3_positions = time_positions_extractor("GabrielleJunyuWaterNov22023_B3.txt")
+    w_b3_times, w_b3_positions = time_positions_extractor(
+        "Water_data/GabrielleJunyuWaterNov22023_B3.txt")
     w_b3_velocities = velocities_generator(w_b3_times, w_b3_positions)
 
     quick_plot(w_b3_times[1:], w_b3_velocities[1:], "w ball 3")
 
     # water ball 4
-    w_b4_times, w_b4_positions = time_positions_extractor("GabrielleJunyuWaterNov22023_B4.txt")
+    w_b4_times, w_b4_positions = time_positions_extractor(
+        "Water_data/GabrielleJunyuWaterNov22023_B4.txt")
     w_b4_velocities = velocities_generator(w_b4_times, w_b4_positions)
 
     quick_plot(w_b4_times[1:], w_b4_velocities[1:], "w ball 4")
 
     # water ball 5
-    w_b5_times, w_b5_positions = time_positions_extractor("GabrielleJunyuWaterNov22023_B5.txt")
+    w_b5_times, w_b5_positions = time_positions_extractor(
+        "Water_data/GabrielleJunyuWaterNov22023_B5.txt")
     w_b5_velocities = velocities_generator(w_b5_times, w_b5_positions)
 
     quick_plot(w_b5_times[1:], w_b5_velocities[1:], "w ball 5")
     # print(w_b5_velocities)
+    plt.show()
