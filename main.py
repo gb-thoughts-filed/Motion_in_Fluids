@@ -118,7 +118,7 @@ def v_term_low_re(w_dict, viscosity, ball_density, gravity, viscosity_err, ball_
                   gravity_err):
     v_term_theo_dict = {}
     for ii in w_dict:
-        v_term_sq = (1 / 9) * ball_density * gravity * (w_dict[ii][0] ** 2) / viscosity
+        v_term_sq = (1 / 18) * ball_density * gravity * (w_dict[ii][0] ** 2) / viscosity
         v_term_sq_err = error_prop_multiplication(v_term_sq, [w_dict[ii], w_dict[ii],
                                                               [viscosity, viscosity_err],
                                                               [ball_density, ball_density_err],
@@ -128,11 +128,15 @@ def v_term_low_re(w_dict, viscosity, ball_density, gravity, viscosity_err, ball_
     return v_term_theo_dict
 
 
-def inverse_function(x, a):
-    return a * x ** 2
+def power_2_function(x, a):
+    return a * np.power(x, 2)
 
 
-def inverse_sqrt_function(x, a):
+def power_function(x, a, b):
+    return a * np.power(x, b)
+
+
+def sqrt_function(x, a):
     return a * np.sqrt(x)
 
 
@@ -177,9 +181,11 @@ if __name__ == "__main__":
         v_theo.append(v_theo_dict[i][0])
         v_theo_err.append(v_theo_dict[i][1])
     # print(v_theo_dict)
-    plot_x_vs_y(w_lst, w_err_lst, v_lst, v_err_lst, "water", inverse_sqrt_function)
-    plot_x_vs_y(w_lst, w_err_lst, v_theo, v_theo_err, "water theo", inverse_sqrt_function)
-    print("reynolds number water:", reynolds_number_calculation(v_corrected_dict, width_dict, water_density, water_viscosity))
+    plot_x_vs_y(w_lst, w_err_lst, v_lst, v_err_lst, "water", sqrt_function)
+    curve_fit_plt(w_lst, v_lst, v_err_lst, "water power", power_function)
+    plot_x_vs_y(w_lst, w_err_lst, v_theo, v_theo_err, "water theo", sqrt_function)
+    print("reynolds number water:",
+          reynolds_number_calculation(v_corrected_dict, width_dict, water_density, water_viscosity))
 
     #  Glycerol Analysis
     plt.figure("glycerol")
@@ -188,7 +194,7 @@ if __name__ == "__main__":
     print(width_dict)
     v_corrected_dict = v_correct(velocities_from_data_sets("Glycerin_data", glycerin_time_dict), width_dict,
                                  dimension_of_container, dimension_of_container_err)
-    v_theo_dict = v_term_low_re(width_dict, glycerol_viscosity, nylon_density, 9.8, 0, 0, 0)
+    v_theo_dict = v_term_low_re(width_dict, glycerol_viscosity, teflon_density, 9.8, 0, 0, 0)
     print(v_corrected_dict)
     v_lst = []
     v_err_lst = []
@@ -204,11 +210,14 @@ if __name__ == "__main__":
         v_theo.append(v_theo_dict[i][0])
         v_theo_err.append(v_theo_dict[i][1])
     # print(v_theo_dict)
-    plot_x_vs_y(np.array(w_lst), w_err_lst, v_lst, v_err_lst, "water", inverse_function)
-    plot_x_vs_y(np.array(w_lst), w_err_lst, v_theo, v_theo_err, "water theo", inverse_function)
+    _, _, predict_curve_fit = plot_x_vs_y(np.array(w_lst), w_err_lst, v_lst, v_err_lst, "water", power_2_function)
+    plot_x_vs_y(np.array(w_lst), w_err_lst, v_theo, v_theo_err, "water theo", None)
     print("reynolds number glycerin:",
           reynolds_number_calculation(v_corrected_dict, width_dict, glycerol_density, glycerol_viscosity))
-
+    plt.figure("residual glycerin")
+    print(v_lst, predict_curve_fit)
+    print("chi_sq curve fit", plot_residual(w_lst, np.array(v_lst), np.array(v_err_lst), np.array(predict_curve_fit), "curve_fit result", power_2_function))
+    print("chi_sq theoretical", plot_residual(w_lst, np.array(v_lst), v_err_lst, np.array(v_theo), "theoretical terminal velocity", 3))
 
     plt.show()
     # # glycerin ball 1
