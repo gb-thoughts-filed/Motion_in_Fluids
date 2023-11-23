@@ -67,7 +67,7 @@ def get_ball_width(file_path):
     ball_num, m1, m2, m3 = np.loadtxt(file_path, delimiter=',', unpack=True,
                                       skiprows=2)
     mean_width = np.mean((m1, m2, m3), axis=0) / 1000
-    mean_width_err = np.std((m1, m2, m3), axis=0) / 1000 * np.sqrt(3)
+    mean_width_err = np.std((m1, m2, m3), axis=0) / (1000 * np.sqrt(3))
     for ii in range(len(ball_num)):
         width_dict["B{}".format(int(ball_num[ii]))] = (
             mean_width[ii], mean_width_err[ii])
