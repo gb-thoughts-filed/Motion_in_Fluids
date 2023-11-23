@@ -68,9 +68,9 @@ def get_ball_width(file_path):
                                       skiprows=2)
     mean_width = np.mean((m1, m2, m3), axis=0) / 1000
     mean_width_err = np.std((m1, m2, m3), axis=0) / 1000 * np.sqrt(3)
-    for i in range(len(ball_num)):
-        width_dict["B{}".format(int(ball_num[i]))] = (
-            mean_width[i], mean_width_err[i])
+    for ii in range(len(ball_num)):
+        width_dict["B{}".format(int(ball_num[ii]))] = (
+            mean_width[ii], mean_width_err[ii])
     return width_dict
 
 
@@ -91,6 +91,43 @@ def v_correct(v_dict, w_dict, dim, dim_err):
     return v_corr_dict
 
 
+def reynolds_number_calculation(v_dict, w_dict, density, viscosity):
+    re_dict = {}
+    for ii in v_dict:
+        re = density * w_dict[ii][0] * v_dict[ii][0] / viscosity
+        re_err = error_prop_multiplication(re, [w_dict[ii], v_dict[ii]])
+        re_dict[ii] = [re, re_err]
+    return re_dict
+
+
+def v_term_high_re(w_dict, drag, fluid_density, ball_density, gravity, drag_err, fluid_density_err, ball_density_err,
+                   gravity_err):
+    v_term_theo_dict = {}
+    for ii in w_dict:
+        v_term_sq = (4 / 3) * ball_density * gravity * w_dict[ii][0] / (fluid_density * drag)
+        v_term_sq_err = error_prop_multiplication(v_term_sq, [w_dict[ii], [drag, drag_err],
+                                                              [fluid_density, fluid_density_err],
+                                                              [ball_density, ball_density_err],
+                                                              [gravity, gravity_err]])
+        print(v_term_sq, v_term_sq_err)
+        v_term_theo_dict[ii] = [np.sqrt(v_term_sq), error_prop_exponent(v_term_sq, v_term_sq_err, 1 / 2)]
+    return v_term_theo_dict
+
+
+def v_term_low_re(w_dict, viscosity, ball_density, gravity, viscosity_err, ball_density_err,
+                  gravity_err):
+    v_term_theo_dict = {}
+    for ii in w_dict:
+        v_term_sq = (1 / 9) * ball_density * gravity * (w_dict[ii][0] ** 2) / viscosity
+        v_term_sq_err = error_prop_multiplication(v_term_sq, [w_dict[ii], w_dict[ii],
+                                                              [viscosity, viscosity_err],
+                                                              [ball_density, ball_density_err],
+                                                              [gravity, gravity_err]])
+        print(v_term_sq, v_term_sq_err)
+        v_term_theo_dict[ii] = [v_term_sq, v_term_sq_err]
+    return v_term_theo_dict
+
+
 def inverse_function(x, a):
     return a * x ** 2
 
@@ -102,29 +139,77 @@ def inverse_sqrt_function(x, a):
 if __name__ == "__main__":
     dimension_of_container = 9.5 / 100
     dimension_of_container_err = 0.1 / 100
+    glycerol_density = 1.26 * 100 ** 3 / 1000
+    glycerol_viscosity = 9.34 / 10
+    water_density = 1000
+    water_viscosity = 0.001
+    teflon_density = 2.2 * 1000
+    nylon_density = 1.12 * 1000
+    drag_coefficient = 0.47
 
     water_time_dict = {'B1': (1, 3), 'B2': (1, 2), 'B3': (1, 2),
                        'B4': (0.75, 1.75), 'B5': (1.2, 1.8)}
     glycerin_time_dict = {'B1': (20, 80), 'B2': (10, 30), 'B3': (5, 15),
                           'B4': (2, 6), 'B5': (1, 4)}
-    water_width_dict = get_ball_width(
-        "Ball Widths.xlsx - Ball Widths Glycerin.csv")
-    print(water_width_dict)
-    v_dict = v_correct(velocities_from_data_sets("Water_data", water_time_dict), water_width_dict,
-                       dimension_of_container, dimension_of_container_err)
-    print(v_dict)
+
+    # water analysis:
+    plt.figure("water")
+    width_dict = get_ball_width(
+        "Ball Widths.xlsx - Ball Widths Water.csv")
+    print(width_dict)
+    print(velocities_from_data_sets("Water_data", water_time_dict), width_dict,
+          dimension_of_container, dimension_of_container_err)
+    v_corrected_dict = v_correct(velocities_from_data_sets("Water_data", water_time_dict), width_dict,
+                                 dimension_of_container, dimension_of_container_err)
+    v_theo_dict = v_term_high_re(width_dict, drag_coefficient, water_density, nylon_density, 9.8, 0, 0, 0, 0)
+    print(v_corrected_dict)
     v_lst = []
     v_err_lst = []
     w_lst = []
     w_err_lst = []
-    for i in water_width_dict:
-        v_lst.append(v_dict[i][0])
-        v_err_lst.append(v_dict[i][1])
-        w_lst.append(water_width_dict[i][0])
-        w_err_lst.append(water_width_dict[i][1])
-    print(v_lst)
-    plot_x_vs_y(w_lst, w_err_lst, v_lst, v_err_lst, "water", inverse_function)
+    v_theo = []
+    v_theo_err = []
+    for i in width_dict:
+        v_lst.append(v_corrected_dict[i][0])
+        v_err_lst.append(v_corrected_dict[i][1])
+        w_lst.append(width_dict[i][0])
+        w_err_lst.append(width_dict[i][1])
+        v_theo.append(v_theo_dict[i][0])
+        v_theo_err.append(v_theo_dict[i][1])
+    # print(v_theo_dict)
     plot_x_vs_y(w_lst, w_err_lst, v_lst, v_err_lst, "water", inverse_sqrt_function)
+    plot_x_vs_y(w_lst, w_err_lst, v_theo, v_theo_err, "water theo", inverse_sqrt_function)
+    print("reynolds number water:", reynolds_number_calculation(v_corrected_dict, width_dict, water_density, water_viscosity))
+
+    #  Glycerol Analysis
+    plt.figure("glycerol")
+    width_dict = get_ball_width(
+        "Ball Widths.xlsx - Ball Widths Glycerin.csv")
+    print(width_dict)
+    v_corrected_dict = v_correct(velocities_from_data_sets("Glycerin_data", glycerin_time_dict), width_dict,
+                                 dimension_of_container, dimension_of_container_err)
+    v_theo_dict = v_term_low_re(width_dict, glycerol_viscosity, nylon_density, 9.8, 0, 0, 0)
+    print(v_corrected_dict)
+    v_lst = []
+    v_err_lst = []
+    w_lst = []
+    w_err_lst = []
+    v_theo = []
+    v_theo_err = []
+    for i in width_dict:
+        v_lst.append(v_corrected_dict[i][0])
+        v_err_lst.append(v_corrected_dict[i][1])
+        w_lst.append(width_dict[i][0])
+        w_err_lst.append(width_dict[i][1])
+        v_theo.append(v_theo_dict[i][0])
+        v_theo_err.append(v_theo_dict[i][1])
+    # print(v_theo_dict)
+    plot_x_vs_y(np.array(w_lst), w_err_lst, v_lst, v_err_lst, "water", inverse_function)
+    plot_x_vs_y(np.array(w_lst), w_err_lst, v_theo, v_theo_err, "water theo", inverse_function)
+    print("reynolds number glycerin:",
+          reynolds_number_calculation(v_corrected_dict, width_dict, glycerol_density, glycerol_viscosity))
+
+
     plt.show()
     # # glycerin ball 1
     # g_b1_times, g_b1_positions = time_positions_extractor(

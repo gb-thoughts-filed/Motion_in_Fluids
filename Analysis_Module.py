@@ -56,11 +56,12 @@ def plot_x_vs_y(x: Union[ndarray, Iterable, int, float], x_error: Union[ndarray,
     if model is not None:
         popt, pcov = curve_fit(model, x, y, sigma=y_error, absolute_sigma=True)
         step = (x[-1]-x[0])/100 * len(x)
-        x = np.arange(x[0]-step, x[-1] + step, step)
+        x_c = np.arange(x[0]-step, x[-1] + step, step)
+        prediction_c = model(x_c, *popt)
+        plt.plot(x_c, prediction_c, label="{} best fit line".format(graph_name))
         prediction = model(x, *popt)
-        plt.plot(x, prediction, label="{} best fit line".format(graph_name))
         plt.legend()
-        return popt, pcov, prediction
+        return popt, pcov, prediction_c
 
 
 def plot_residual(x: Union[ndarray, Iterable, int, float], y: Union[ndarray, Iterable, int, float],
