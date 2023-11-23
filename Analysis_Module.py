@@ -85,7 +85,9 @@ def plot_residual(x: Union[ndarray, Iterable, int, float], y: Union[ndarray, Ite
     plt.errorbar(x, y - prediction, yerr=uncertainty, ls='', lw=0.5, marker='o', markersize=2,
                  capsize=1.5, capthick=0.5, ecolor="grey",
                  label="{} Residual".format(graph_name))
-    plt.plot(x, np.zeros_like(y), "g-", label="0 line")
+    _, labels = plt.gca().get_legend_handles_labels()
+    if "0 line" not in labels:
+        plt.plot(x, np.zeros_like(y), "g-", label="0 line")
     plt.legend()
     if model is not None:
         if type(model) == int:
