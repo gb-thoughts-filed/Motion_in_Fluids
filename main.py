@@ -183,27 +183,20 @@ if __name__ == "__main__":
     v_corrected_dict = v_correct(
         velocities_from_data_sets("Water_data", water_time_dict), width_dict,
         dimension_of_container, dimension_of_container_err)
-    v_theo_dict = v_term_high_re(width_dict, drag_coefficient, water_density,
-                                 nylon_density, 9.8, 0, 0, 0, 0)
     print(v_corrected_dict)
     v_lst = []
     v_err_lst = []
     w_lst = []
     w_err_lst = []
-    v_theo = []
-    v_theo_err = []
     for i in width_dict:
         v_lst.append(v_corrected_dict[i][0])
         v_err_lst.append(v_corrected_dict[i][1])
         w_lst.append(width_dict[i][0])
         w_err_lst.append(width_dict[i][1])
-        v_theo.append(v_theo_dict[i][0])
-        v_theo_err.append(v_theo_dict[i][1])
     # print(v_theo_dict)
     plot_x_vs_y(w_lst, w_err_lst, v_lst, v_err_lst, "water", sqrt_function)
-    curve_fit_plt(w_lst, v_lst, v_err_lst, "water power", power_function)
-    plot_x_vs_y(w_lst, w_err_lst, v_theo, v_theo_err, "water theo",
-                sqrt_function)
+    popt, _, prediction = curve_fit_plt(w_lst, v_lst, v_err_lst, "water power", power_function)
+    print("popt water: ", popt)
     print("reynolds number water:",
           reynolds_number_calculation(v_corrected_dict, width_dict,
                                       water_density, water_viscosity))
